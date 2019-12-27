@@ -2,10 +2,10 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from datagen import DatasetFromFolder
-from os.path import join
+import itertools
 import os
 from model import G_net, D_net, PatchLoss, device
-from utils import AverageMeter, visualize
+from utils import AverageMeter, visualize, weights_init_normal
 
 root = 'data'
 
@@ -23,78 +23,106 @@ d_layer = 3
 check = 'best_checkpoint.tar'
 
 train_set = DatasetFromFolder(root)
-val_set = DatasetFromFolder(root)
 train_loader = DataLoader(train_set, batch_size, True)
-tval_loader = DataLoader(val_set, batch_size, True)
 
 if os.path.exists(check):
     print('load checkpoint')
     checkpoint = torch.load(check)
-    net_g = checkpoint[0]
-    net_d = checkpoint[1]
+    netg_a2b = checkpoint[0]
+    netg_b2a = checkpoint[1]
+    netd_a = checkpoint[2]
+    netd_b = checkpoint[3]
 else:
     print('train from init')
-    net_g = G_net(input_channel, output_channel, ngf, g_layer).to(device)
-    net_d = D_net(input_channel + output_channel, ndf, d_layer).to(device)
+    netg_a2b = G_net(input_channel, output_channel, ngf, g_layer).to(device)
+    netg_b2a = G_net(input_channel, output_channel, ngf, g_layer).to(device)
+    netd_a = D_net(input_channel + output_channel, ndf, d_layer).to(device)
+    netd_b = D_net(input_channel + output_channel, ndf, d_layer).to(device)
+    netg_a2b.apply(weights_init_normal)
+    netg_b2a.apply(weights_init_normal)
+    netd_a.apply(weights_init_normal)
+    netd_b.apply(weights_init_normal)
 
 criterionGAN = PatchLoss().to(device)
 criterionL1 = nn.L1Loss().to(device)
 criterionMSE = nn.MSELoss().to(device)
 
-optimzer_g = torch.optim.Adam(net_g.parameters(), lr)
-optimzer_d = torch.optim.Adam(net_d.parameters(), lr)
+optimzer_g = torch.optim.Adam(itertools.chain(netg_b2a.parameters(), netg_a2b.parameters()), lr=lr)
+optimzerd_a = torch.optim.Adam(netd_a.parameters(), lr)
+optimzerd_b = torch.optim.Adam(netd_b.parameters(), lr)
 
 
 def train():
     for epoch in range(epochs):
-        avg_loss_g = AverageMeter()
-        avg_loss_d = AverageMeter()
+        avg_loss_g_a2b = AverageMeter()
+        avg_loss_g_b2a = AverageMeter()
+        avg_loss_d_a = AverageMeter()
+        avg_loss_d_b = AverageMeter()
         min_loss_g = float('inf')
         min_loss_d = float('inf')
         for i, data in enumerate(train_loader):
             img_a, img_b = data[0].to(device), data[1].to(device)
-            fake_b = net_g(img_a)
-
-            # update discriminator
-            optimzer_d.zero_grad()
-
-            fake = torch.cat((img_a, fake_b), 1)
-            out_fake = net_d(fake.detach())
-            loss_fake = criterionGAN(out_fake, False)
-
-            real = torch.cat((img_a, img_b), 1)
-            out_real = net_d(real)
-            loss_real = criterionGAN(out_real, True)
-
-            loss_d = (loss_fake + loss_real) * 0.5
-            loss_d.backward()
-            optimzer_d.step()
 
             # update generator
             optimzer_g.zero_grad()
 
-            fake = torch.cat((img_a, fake_b), 1)
-            out_fake = net_d(fake)
-            loss_g = criterionGAN(out_fake, True)
+            fake_b = netg_a2b(img_a)
+            pred_b = netd_b(fake_b)
+            loss_d_b = criterionGAN(pred_b, True)
 
-            loss_L1 = criterionL1(img_b, fake_b) * weight
-            loss_g = loss_g + loss_L1
+            fake_a = netg_b2a(img_b)
+            pred_a = netd_a(fake_a)
+            loss_d_a = criterionGAN(pred_a, True)
+
+            recover_a = netg_b2a(fake_b)
+            loss_cycle_a = criterionL1(recover_a, img_a)
+
+            recover_b = netg_a2b(fake_a)
+            loss_cycle_b = criterionL1(recover_b, img_b)
+
+            loss_g = loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
             loss_g.backward()
-            optimzer_g.step()
 
-            avg_loss_d.update(loss_d)
-            avg_loss_g.update(loss_g)
+            # update discriminator  a
+            optimzerd_a.zero_grad()
+
+            pred_real_a = netd_a(img_a)
+            loss_d_a_real = criterionGAN(pred_real_a, True)
+
+            pred_fake_a = netd_a(fake_a.detach())
+            loss_d_a_fake = criterionGAN(pred_fake_a, False)
+
+            loss_a = (loss_d_a_fake + loss_d_a_real) * 0.5
+            loss_a.backward()
+            optimzerd_a.step()
+
+            # update discriminator  b
+            optimzerd_b.zero_grad()
+
+            pred_real_b = netd_b(img_b)
+            loss_d_b_real = criterionGAN(pred_real_b, True)
+
+            pred_fake_b = netd_b(fake_b.detach())
+            loss_d_b_fake = criterionGAN(pred_fake_b, False)
+
+            loss_b = (loss_d_b_fake + loss_d_b_real) * 0.5
+            loss_b.backward()
+            optimzerd_b.step()
+
+            # loss
+            avg_loss_g_a2b.update(loss_cycle_a, loss_d_a)
+            avg_loss_g_b2a.update(loss_cycle_b, loss_d_b)
+            avg_loss_d_a.update(loss_a)
+            avg_loss_d_b.update(loss_b)
 
             if i % print_freq == 0:
                 print('epoch {}/{}'.format(epoch, i))
-                print('loss: lossg {0} lossd{1} avgg{2} avgd{3}'.format(avg_loss_g.val, avg_loss_d.val, avg_loss_g.avg, avg_loss_d.avg))
-                if loss_g < min_loss_g and loss_d < min_loss_d:
-                    torch.save((net_g, net_d), check)
-        vis()
-
-
-def vis():
-    visualize(net_g, train_loader)
+                print('loss: avg_loss_g_a2b {0} avg_loss_g_b2a{1} avg_loss_d_a{2} avg_loss_d_b{3}'
+                      .format(avg_loss_g_a2b.val, avg_loss_g_b2a.val, avg_loss_d_a.avg, avg_loss_d_b.avg))
+                if loss_g < min_loss_g and loss_a + loss_b < min_loss_d:
+                    min_loss_g = loss_g
+                    min_loss_d = loss_a + loss_b
+                    torch.save((netg_a2b, netg_b2a, netd_a, netd_b), check)
 
 
 if __name__ == '__main__':
