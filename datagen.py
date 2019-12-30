@@ -36,7 +36,7 @@ class DatasetFromFolder(data.Dataset):
         return a, b
 
     def __len__(self):
-        return len(self.image_filenames)
+        return len(self.image_a)
 
 
 if __name__ == '__main__':

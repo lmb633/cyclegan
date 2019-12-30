@@ -39,12 +39,12 @@ else:
     print('train from init')
     netg_a2b = G_net(input_channel, output_channel, ngf, g_layer).to(device)
     netg_b2a = G_net(input_channel, output_channel, ngf, g_layer).to(device)
-    netd_a = D_net(input_channel + output_channel, ndf, d_layer).to(device)
-    netd_b = D_net(input_channel + output_channel, ndf, d_layer).to(device)
-    netg_a2b.apply(weights_init_normal)
-    netg_b2a.apply(weights_init_normal)
-    netd_a.apply(weights_init_normal)
-    netd_b.apply(weights_init_normal)
+    netd_a = D_net(input_channel, ndf, d_layer).to(device)
+    netd_b = D_net(input_channel, ndf, d_layer).to(device)
+    # netg_a2b.apply(weights_init_normal)
+    # netg_b2a.apply(weights_init_normal)
+    # netd_a.apply(weights_init_normal)
+    # netd_b.apply(weights_init_normal)
 
 criterionGAN = PatchLoss().to(device)
 criterionL1 = nn.L1Loss().to(device)
@@ -90,7 +90,7 @@ def train():
             loss_cycle_b = criterionL1(recover_b, img_b) * 10
 
             loss_g = loss_id_a + loss_id_b + loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
-            print('generator loss ', loss_id_a, loss_id_b, loss_d_a, loss_d_b, loss_cycle_a, loss_cycle_b)
+            # print('generator loss ', loss_id_a, loss_id_b, loss_d_a, loss_d_b, loss_cycle_a, loss_cycle_b)
             loss_g.backward()
 
             # update discriminator  a
@@ -103,7 +103,7 @@ def train():
             loss_d_a_fake = criterionGAN(pred_fake_a, False)
 
             loss_a = (loss_d_a_fake + loss_d_a_real) * 0.5
-            print('discriminator loss a ', loss_d_a_fake, loss_d_a_real)
+            # print('discriminator loss a ', loss_d_a_fake, loss_d_a_real)
             loss_a.backward()
             optimzerd_a.step()
 
@@ -117,7 +117,7 @@ def train():
             loss_d_b_fake = criterionGAN(pred_fake_b, False)
 
             loss_b = (loss_d_b_fake + loss_d_b_real) * 0.5
-            print('discriminator loss b ', loss_d_b_fake, loss_d_b_real)
+            # print('discriminator loss b ', loss_d_b_fake, loss_d_b_real)
             loss_b.backward()
             optimzerd_b.step()
 
@@ -128,8 +128,8 @@ def train():
             avg_loss_d_b.update(loss_b)
 
             if i % print_freq == 0:
-                print('epoch {}/{}'.format(epoch, i))
-                print('loss: avg_loss_g_a2b {0} avg_loss_g_b2a{1} avg_loss_d_a{2} avg_loss_d_b{3}'
+                print('epoch {0} {1}/{2}'.format(epoch, i, train_loader.__len__()))
+                print('loss: avg_loss_g_a2b {0} avg_loss_g_b2a {1} avg_loss_d_a {2} avg_loss_d_b {3}'
                       .format(avg_loss_g_a2b.val, avg_loss_g_b2a.val, avg_loss_d_a.avg, avg_loss_d_b.avg))
                 if loss_g < min_loss_g and loss_a + loss_b < min_loss_d:
                     min_loss_g = loss_g
