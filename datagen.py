@@ -16,11 +16,11 @@ mean = torch.Tensor([0.485, 0.456, 0.406])
 
 
 class DatasetFromFolder(data.Dataset):
-    def __init__(self, image_dir):
+    def __init__(self, image_dir, train_or_test='train'):
         super(DatasetFromFolder, self).__init__()
         self.root = image_dir
-        self.roota = join(self.root, 'a')
-        self.rootb = join(self.root, 'b')
+        self.roota = join(self.root, train_or_test) + 'A'
+        self.rootb = join(self.root, train_or_test) + 'B'
         self.image_a = [x for x in listdir(self.roota)]
         self.image_b = [x for x in listdir(self.rootb)]
 

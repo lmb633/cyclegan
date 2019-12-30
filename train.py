@@ -7,7 +7,7 @@ import os
 from model import G_net, D_net, PatchLoss, device
 from utils import AverageMeter, visualize, weights_init_normal
 
-root = 'data'
+root = 'data/selfie2anime'
 
 print_freq = 10
 weight = 10
@@ -22,8 +22,11 @@ g_layer = 9
 d_layer = 3
 check = 'best_checkpoint.tar'
 
-train_set = DatasetFromFolder(root)
+train_set = DatasetFromFolder(root, 'train')
 train_loader = DataLoader(train_set, batch_size, True)
+
+test_set = DatasetFromFolder(root, 'test')
+test_loader = DataLoader(test_set, batch_size, True)
 
 if os.path.exists(check):
     print('load checkpoint')
@@ -132,6 +135,8 @@ def train():
                     min_loss_g = loss_g
                     min_loss_d = loss_a + loss_b
                     torch.save((netg_a2b, netg_b2a, netd_a, netd_b), check)
+
+                visualize(netg_a2b, netg_b2a, test_loader)
 
 
 if __name__ == '__main__':
