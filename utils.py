@@ -4,6 +4,7 @@ from PIL import Image
 
 from model import device
 from datagen import std, mean
+from torch.nn import init
 
 
 def is_image_file(filename):
@@ -75,10 +76,13 @@ def visualize(modela2b, modelb2a, dataloader):
         break
 
 
-def weights_init_normal(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        torch.nn.init.normal(m.weight.data, 0.0, 0.02)
-    elif classname.find('BatchNorm2d') != -1:
-        torch.nn.init.normal(m.weight.data, 1.0, 0.02)
-        torch.nn.init.constant(m.bias.data, 0.0)
+def weights_init_normal(optimizer):
+    for group in optimizer.param_groups:
+        for param in group['params']:
+            init.normal_(param.weight.data)
+
+
+def clip_weight(optimizer, weight_clip=0.01):
+    for group in optimizer.param_groups:
+        for param in group['params']:
+            param.weight.data.clamp_(-weight_clip, weight_clip)

@@ -94,7 +94,7 @@ class D_net(nn.Module):
             inchannel = ndf
             ndf = ndf * 2
         self.conv.add_module('out', nn.Conv2d(inchannel, 1, kernel_size=3, stride=1, padding=1))
-        self.conv.add_module('act', nn.Sigmoid())
+        # self.conv.add_module('act', nn.Sigmoid())
 
     def forward(self, x):
         return self.conv(x)
@@ -111,7 +111,7 @@ class PatchLoss(nn.Module):
 
     def forward(self, x, flag):
         tensor = self.get_target_tensor(x, flag)
-        return nn.BCELoss()(x, tensor)
+        return nn.MSELoss()(x, tensor)
 
 
 if __name__ == '__main__':
@@ -128,4 +128,3 @@ if __name__ == '__main__':
     print(output)
     loss = criterian(output, False)
     print(loss)
-

@@ -5,10 +5,12 @@ from datagen import DatasetFromFolder
 import itertools
 import os
 from model import G_net, D_net, PatchLoss, device
-from utils import AverageMeter, visualize, weights_init_normal
+from utils import AverageMeter, visualize, weights_init_normal, clip_weight
 
 root = 'data/selfie2anime'
 
+d_train_freq = 1
+clip = 0.01
 print_freq = 10
 weight = 10
 epochs = 1000
@@ -41,18 +43,18 @@ else:
     netg_b2a = G_net(input_channel, output_channel, ngf, g_layer).to(device)
     netd_a = D_net(input_channel, ndf, d_layer).to(device)
     netd_b = D_net(input_channel, ndf, d_layer).to(device)
-    # netg_a2b.apply(weights_init_normal)
-    # netg_b2a.apply(weights_init_normal)
-    # netd_a.apply(weights_init_normal)
-    # netd_b.apply(weights_init_normal)
 
 criterionGAN = PatchLoss().to(device)
 criterionL1 = nn.L1Loss().to(device)
 criterionMSE = nn.MSELoss().to(device)
 
-optimzer_g = torch.optim.Adam(itertools.chain(netg_b2a.parameters(), netg_a2b.parameters()), lr=lr)
-optimzerd_a = torch.optim.Adam(netd_a.parameters(), lr)
-optimzerd_b = torch.optim.Adam(netd_b.parameters(), lr)
+optimzer_g = torch.optim.SGD(itertools.chain(netg_b2a.parameters(), netg_a2b.parameters()), lr=lr)
+optimzerd_a = torch.optim.SGD(netd_a.parameters(), lr)
+optimzerd_b = torch.optim.SGD(netd_b.parameters(), lr)
+
+weights_init_normal(optimzer_g)
+weights_init_normal(optimzerd_a)
+weights_init_normal(optimzerd_b)
 
 
 def train():
@@ -66,7 +68,7 @@ def train():
         for i, data in enumerate(train_loader):
             img_a, img_b = data[0].to(device), data[1].to(device)
 
-            # update generator
+            #### update generator
             optimzer_g.zero_grad()
             # identity loss
             img_b_fake = netg_a2b(img_b)
@@ -93,7 +95,7 @@ def train():
             # print('generator loss ', loss_id_a, loss_id_b, loss_d_a, loss_d_b, loss_cycle_a, loss_cycle_b)
             loss_g.backward()
 
-            # update discriminator  a
+            #### update discriminator  a
             optimzerd_a.zero_grad()
 
             pred_real_a = netd_a(img_a)
@@ -106,26 +108,29 @@ def train():
             # print('discriminator loss a ', loss_d_a_fake, loss_d_a_real)
             loss_a.backward()
             optimzerd_a.step()
+            clip_weight(optimzerd_a, clip)
 
-            # update discriminator  b
-            optimzerd_b.zero_grad()
+            #### update discriminator  b
+            if i % d_train_freq == 0:
+                optimzerd_b.zero_grad()
 
-            pred_real_b = netd_b(img_b)
-            loss_d_b_real = criterionGAN(pred_real_b, True)
+                pred_real_b = netd_b(img_b)
+                loss_d_b_real = criterionGAN(pred_real_b, True)
 
-            pred_fake_b = netd_b(fake_b.detach())
-            loss_d_b_fake = criterionGAN(pred_fake_b, False)
+                pred_fake_b = netd_b(fake_b.detach())
+                loss_d_b_fake = criterionGAN(pred_fake_b, False)
 
-            loss_b = (loss_d_b_fake + loss_d_b_real) * 0.5
-            # print('discriminator loss b ', loss_d_b_fake, loss_d_b_real)
-            loss_b.backward()
-            optimzerd_b.step()
+                loss_b = (loss_d_b_fake + loss_d_b_real) * 0.5
+                # print('discriminator loss b ', loss_d_b_fake, loss_d_b_real)
+                loss_b.backward()
+                optimzerd_b.step()
+                clip_weight(optimzerd_b, clip)
+                avg_loss_d_a.update(loss_a)
+                avg_loss_d_b.update(loss_b)
 
             # loss
             avg_loss_g_a2b.update(loss_cycle_a, loss_d_a)
             avg_loss_g_b2a.update(loss_cycle_b, loss_d_b)
-            avg_loss_d_a.update(loss_a)
-            avg_loss_d_b.update(loss_b)
 
             if i % print_freq == 0:
                 print('epoch {0} {1}/{2}'.format(epoch, i, train_loader.__len__()))
