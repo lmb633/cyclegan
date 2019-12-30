@@ -9,7 +9,7 @@ from utils import AverageMeter, visualize, weights_init_normal, clip_weight
 
 root = 'data/selfie2anime'
 
-d_train_freq = 1
+d_train_freq = 20
 clip = 0.01
 print_freq = 10
 weight = 10
@@ -72,9 +72,9 @@ def train():
             optimzer_g.zero_grad()
             # identity loss
             img_b_fake = netg_a2b(img_b)
-            loss_id_b = criterionL1(img_b, img_b_fake) * 5
+            loss_id_b = criterionL1(img_b, img_b_fake)
             img_a_fake = netg_b2a(img_a)
-            loss_id_a = criterionL1(img_a, img_a_fake) * 0.5
+            loss_id_a = criterionL1(img_a, img_a_fake)
             # gan loss
             fake_b = netg_a2b(img_a)
             pred_b = netd_b(fake_b)
@@ -86,13 +86,13 @@ def train():
 
             # cycle loss
             recover_a = netg_b2a(fake_b)
-            loss_cycle_a = criterionL1(recover_a, img_a) * 10
+            loss_cycle_a = criterionL1(recover_a, img_a)
 
             recover_b = netg_a2b(fake_a)
-            loss_cycle_b = criterionL1(recover_b, img_b) * 10
+            loss_cycle_b = criterionL1(recover_b, img_b)
 
             loss_g = loss_id_a + loss_id_b + loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
-            # print('generator loss ', loss_id_a, loss_id_b, loss_d_a, loss_d_b, loss_cycle_a, loss_cycle_b)
+            print('generator loss ', loss_id_a.data, loss_id_b.data, loss_d_a.data, loss_d_b.data, loss_cycle_a.data, loss_cycle_b.data)
             loss_g.backward()
 
             #### update discriminator  a
