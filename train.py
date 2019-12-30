@@ -65,7 +65,12 @@ def train():
 
             # update generator
             optimzer_g.zero_grad()
-
+            # identity loss
+            img_b_fake = netg_a2b(img_b)
+            loss_id_b = criterionL1(img_b, img_b_fake) * 5
+            img_a_fake = netg_b2a(img_a)
+            loss_id_a = criterionL1(img_a, img_a_fake) * 0.5
+            # gan loss
             fake_b = netg_a2b(img_a)
             pred_b = netd_b(fake_b)
             loss_d_b = criterionGAN(pred_b, True)
@@ -74,13 +79,15 @@ def train():
             pred_a = netd_a(fake_a)
             loss_d_a = criterionGAN(pred_a, True)
 
+            # cycle loss
             recover_a = netg_b2a(fake_b)
-            loss_cycle_a = criterionL1(recover_a, img_a)
+            loss_cycle_a = criterionL1(recover_a, img_a) * 10
 
             recover_b = netg_a2b(fake_a)
-            loss_cycle_b = criterionL1(recover_b, img_b)
+            loss_cycle_b = criterionL1(recover_b, img_b) * 10
 
-            loss_g = loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
+            loss_g = loss_id_a + loss_id_b + loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
+            print('generator loss ', loss_id_a, loss_id_b, loss_d_a, loss_d_b, loss_cycle_a, loss_cycle_b)
             loss_g.backward()
 
             # update discriminator  a
@@ -93,6 +100,7 @@ def train():
             loss_d_a_fake = criterionGAN(pred_fake_a, False)
 
             loss_a = (loss_d_a_fake + loss_d_a_real) * 0.5
+            print('discriminator loss a ', loss_d_a_fake, loss_d_a_real)
             loss_a.backward()
             optimzerd_a.step()
 
@@ -106,6 +114,7 @@ def train():
             loss_d_b_fake = criterionGAN(pred_fake_b, False)
 
             loss_b = (loss_d_b_fake + loss_d_b_real) * 0.5
+            print('discriminator loss b ', loss_d_b_fake, loss_d_b_real)
             loss_b.backward()
             optimzerd_b.step()
 
