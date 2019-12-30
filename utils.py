@@ -79,10 +79,10 @@ def visualize(modela2b, modelb2a, dataloader):
 def weights_init_normal(optimizer):
     for group in optimizer.param_groups:
         for param in group['params']:
-            init.normal_(param.weight.data)
+            init.normal_(param.data)
 
 
 def clip_weight(optimizer, weight_clip=0.01):
     for group in optimizer.param_groups:
         for param in group['params']:
-            param.weight.data.clamp_(-weight_clip, weight_clip)
+            param.data.clamp_(-weight_clip, weight_clip)

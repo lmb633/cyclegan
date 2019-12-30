@@ -116,15 +116,17 @@ class PatchLoss(nn.Module):
 
 if __name__ == '__main__':
     gnet = G_net(reslayer=2)
-    dnet = D_net()
-    criterian = PatchLoss()
-    input = torch.randn([1, 3, 119, 119])
-    print(input.shape)
-    output = gnet(input)
-    print(output.shape)
-
-    output = dnet(input)
-    print(output.shape)
-    print(output)
-    loss = criterian(output, False)
-    print(loss)
+    for para in gnet.parameters():
+        print(para.data.shape)
+    # dnet = D_net()
+    # criterian = PatchLoss()
+    # input = torch.randn([1, 3, 119, 119])
+    # print(input.shape)
+    # output = gnet(input)
+    # print(output.shape)
+    #
+    # output = dnet(input)
+    # print(output.shape)
+    # print(output)
+    # loss = criterian(output, False)
+    # print(loss)
