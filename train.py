@@ -135,8 +135,8 @@ def train():
                 avg_loss_d_b.update(loss_b)
 
             # loss
-            avg_loss_g_a2b.update(loss_cycle_a + loss_id_a)
-            avg_loss_g_b2a.update(loss_cycle_b + loss_id_b)
+            # avg_loss_g_a2b.update(loss_cycle_a + loss_id_a)
+            # avg_loss_g_b2a.update(loss_cycle_b + loss_id_b)
             avg_loss_g.update(loss_g)
 
             if i % print_freq == 0:

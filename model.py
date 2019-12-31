@@ -35,7 +35,7 @@ class InConv(nn.Module):
         self.conv = nn.Sequential(
             nn.ReflectionPad2d(3),
             nn.Conv2d(inchannel, outchannel, kernel_size=7),
-            nn.BatchNorm2d(64),
+            nn.InstanceNorm2d(64),
             nn.ReLU()
         )
 
@@ -60,7 +60,7 @@ class DownSample(nn.Module):
     def __init__(self, inchannel, outchannel):
         super(DownSample, self).__init__()
         self.conv = nn.Conv2d(inchannel, outchannel, kernel_size=3, stride=2, padding=1)
-        self.norm = nn.BatchNorm2d(outchannel)
+        self.norm = nn.InstanceNorm2d(outchannel)
         self.relu = nn.ReLU()
 
     def forward(self, x):
@@ -75,7 +75,7 @@ class UpSample(nn.Module):
         super(UpSample, self).__init__()
         self.up = nn.Sequential(
             nn.ConvTranspose2d(inchannel, outchannel, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.BatchNorm2d(outchannel),
+            nn.InstanceNorm2d(outchannel),
             nn.ReLU()
         )
 
@@ -89,11 +89,11 @@ class D_net(nn.Module):
         self.conv = nn.Sequential()
         for i in range(layer):
             self.conv.add_module('conv{0}'.format(i), nn.Conv2d(inchannel, ndf, kernel_size=3, stride=2, padding=1))
-            self.conv.add_module('norm{0}'.format(i), nn.BatchNorm2d(ndf))
+            self.conv.add_module('norm{0}'.format(i), nn.InstanceNorm2d(ndf))
             self.conv.add_module('act{0}'.format(i), nn.LeakyReLU(0.2))
             inchannel = ndf
             ndf = ndf * 2
-        self.conv.add_module('out', nn.Conv2d(inchannel, 1, kernel_size=3, stride=1, padding=1))
+        self.conv.add_module('out', nn.Conv2d(inchannel, 1, kernel_size=4, stride=1, padding=1))
         # self.conv.add_module('act', nn.Sigmoid())
 
     def forward(self, x):

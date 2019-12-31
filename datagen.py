@@ -45,7 +45,12 @@ if __name__ == '__main__':
     loader = DataLoader(dataset, batch_size=1, shuffle=True)
     for data in loader:
         print(data[0].shape)
-        data = (data[0].squeeze().permute(1, 2, 0) * std + mean) * 255
-        data = data.float().numpy().astype(np.uint8)
-        image_pil = Image.fromarray(data)
+        data1 = (data[0].squeeze().permute(1, 2, 0) * std + mean) * 255
+        data1 = data1.float().numpy().astype(np.uint8)
+        image_pil = Image.fromarray(data1)
+        image_pil.show()
+
+        data2 = (data[1].squeeze().permute(1, 2, 0) * std + mean) * 255
+        data2 = data2.float().numpy().astype(np.uint8)
+        image_pil = Image.fromarray(data2)
         image_pil.show()
