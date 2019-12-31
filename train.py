@@ -14,7 +14,7 @@ clip = 0.01
 print_freq = 10
 weight = 10
 epochs = 1000
-lr = 0.0001
+lr = 0.0002
 batch_size = 32
 input_channel = 3
 output_channel = 3
@@ -61,6 +61,7 @@ def train():
     for epoch in range(epochs):
         avg_loss_g_a2b = AverageMeter()
         avg_loss_g_b2a = AverageMeter()
+        avg_loss_g = AverageMeter()
         avg_loss_d_a = AverageMeter()
         avg_loss_d_b = AverageMeter()
         min_loss_g = float('inf')
@@ -92,26 +93,29 @@ def train():
             loss_cycle_b = criterionL1(recover_b, img_b)
 
             loss_g = loss_id_a + loss_id_b + loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
-            print('generator loss ', loss_id_a.data, loss_id_b.data, loss_d_a.data, loss_d_b.data, loss_cycle_a.data, loss_cycle_b.data)
+            # print('generator loss ', loss_id_a.data, loss_id_b.data, loss_d_a.data, loss_d_b.data, loss_cycle_a.data, loss_cycle_b.data)
+            print('generator loss ', loss_g)
+
             loss_g.backward()
 
-            #### update discriminator  a
-            optimzerd_a.zero_grad()
-
-            pred_real_a = netd_a(img_a)
-            loss_d_a_real = criterionGAN(pred_real_a, True)
-
-            pred_fake_a = netd_a(fake_a.detach())
-            loss_d_a_fake = criterionGAN(pred_fake_a, False)
-
-            loss_a = (loss_d_a_fake + loss_d_a_real) * 0.5
-            # print('discriminator loss a ', loss_d_a_fake, loss_d_a_real)
-            loss_a.backward()
-            optimzerd_a.step()
-            clip_weight(optimzerd_a, clip)
-
-            #### update discriminator  b
             if i % d_train_freq == 0:
+                #### update discriminator  a
+                optimzerd_a.zero_grad()
+
+                pred_real_a = netd_a(img_a)
+                loss_d_a_real = criterionGAN(pred_real_a, True)
+
+                pred_fake_a = netd_a(fake_a.detach())
+                loss_d_a_fake = criterionGAN(pred_fake_a, False)
+
+                loss_a = (loss_d_a_fake + loss_d_a_real) * 0.5
+                # print('discriminator loss a ', loss_d_a_fake, loss_d_a_real)
+                loss_a.backward()
+                optimzerd_a.step()
+                clip_weight(optimzerd_a, clip)
+
+                #### update discriminator  b
+
                 optimzerd_b.zero_grad()
 
                 pred_real_b = netd_b(img_b)
@@ -129,13 +133,14 @@ def train():
                 avg_loss_d_b.update(loss_b)
 
             # loss
-            avg_loss_g_a2b.update(loss_cycle_a, loss_d_a)
-            avg_loss_g_b2a.update(loss_cycle_b, loss_d_b)
+            avg_loss_g_a2b.update(loss_cycle_a + loss_id_a)
+            avg_loss_g_b2a.update(loss_cycle_b + loss_id_b)
+            avg_loss_g.update(loss_g)
 
             if i % print_freq == 0:
                 print('epoch {0} {1}/{2}'.format(epoch, i, train_loader.__len__()))
-                print('loss: avg_loss_g_a2b {0} avg_loss_g_b2a {1} avg_loss_d_a {2} avg_loss_d_b {3}'
-                      .format(avg_loss_g_a2b.val, avg_loss_g_b2a.val, avg_loss_d_a.avg, avg_loss_d_b.avg))
+                print('loss: avg_loss_g {0} avg_loss_d_a {1} avg_loss_d_b {2}'
+                      .format(avg_loss_g.val, avg_loss_d_a.avg, avg_loss_d_b.avg))
                 if loss_g < min_loss_g and loss_a + loss_b < min_loss_d:
                     min_loss_g = loss_g
                     min_loss_d = loss_a + loss_b

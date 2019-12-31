@@ -134,3 +134,5 @@ if __name__ == '__main__':
     print(output)
     loss = criterian(output, False)
     print(loss)
+
+
