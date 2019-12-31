@@ -97,7 +97,11 @@ class D_net(nn.Module):
         # self.conv.add_module('act', nn.Sigmoid())
 
     def forward(self, x):
-        return self.conv(x)
+        x = self.conv(x)
+        print(x.shape)
+        x = nn.AvgPool2d(x.size()[2:])(x)
+        print(x.shape)
+        return x.view(x.size()[0], -1)
 
 
 class PatchLoss(nn.Module):
@@ -116,17 +120,17 @@ class PatchLoss(nn.Module):
 
 if __name__ == '__main__':
     gnet = G_net(reslayer=2)
-    for para in gnet.parameters():
-        print(para.data.shape)
-    # dnet = D_net()
-    # criterian = PatchLoss()
-    # input = torch.randn([1, 3, 119, 119])
+    # for para in gnet.parameters():
+    #     print(para.data.shape)
+    dnet = D_net()
+    criterian = PatchLoss()
+    input = torch.randn([1, 3, 112, 112])
     # print(input.shape)
     # output = gnet(input)
     # print(output.shape)
     #
-    # output = dnet(input)
-    # print(output.shape)
-    # print(output)
-    # loss = criterian(output, False)
-    # print(loss)
+    output = dnet(input)
+    print(output.shape)
+    print(output)
+    loss = criterian(output, False)
+    print(loss)
