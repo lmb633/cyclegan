@@ -93,7 +93,7 @@ def train():
             recover_b = netg_a2b(fake_a)
             loss_cycle_b = criterionL1(recover_b, img_b)
 
-            loss_g = loss_id_a, loss_id_b, loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
+            loss_g = loss_id_a + loss_id_b + loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
             # print('generator loss ', loss_id_a.data, loss_id_b.data, loss_d_a.data, loss_d_b.data, loss_cycle_a.data, loss_cycle_b.data)
             print('generator loss ', loss_g)
 
