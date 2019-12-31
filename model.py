@@ -98,9 +98,7 @@ class D_net(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        print(x.shape)
         x = nn.AvgPool2d(x.size()[2:])(x)
-        print(x.shape)
         return x.view(x.size()[0], -1)
 
 
