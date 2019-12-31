@@ -51,10 +51,11 @@ criterionMSE = nn.MSELoss().to(device)
 optimzer_g = torch.optim.SGD(itertools.chain(netg_b2a.parameters(), netg_a2b.parameters()), lr=lr)
 optimzerd_a = torch.optim.SGD(netd_a.parameters(), lr)
 optimzerd_b = torch.optim.SGD(netd_b.parameters(), lr)
-
-weights_init_normal(optimzer_g)
-weights_init_normal(optimzerd_a)
-weights_init_normal(optimzerd_b)
+if not os.path.exists(check):
+    print('init param')
+    weights_init_normal(optimzer_g)
+    weights_init_normal(optimzerd_a)
+    weights_init_normal(optimzerd_b)
 
 
 def train():
@@ -92,11 +93,12 @@ def train():
             recover_b = netg_a2b(fake_a)
             loss_cycle_b = criterionL1(recover_b, img_b)
 
-            loss_g = loss_id_a + loss_id_b + loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
+            loss_g = loss_id_a, loss_id_b, loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
             # print('generator loss ', loss_id_a.data, loss_id_b.data, loss_d_a.data, loss_d_b.data, loss_cycle_a.data, loss_cycle_b.data)
             print('generator loss ', loss_g)
 
             loss_g.backward()
+            optimzer_g.step()
 
             if i % d_train_freq == 0:
                 #### update discriminator  a
@@ -139,7 +141,7 @@ def train():
 
             if i % print_freq == 0:
                 print('epoch {0} {1}/{2}'.format(epoch, i, train_loader.__len__()))
-                print('loss: avg_loss_g {0} avg_loss_d_a {1} avg_loss_d_b {2}'
+                print('loss: avg_loss_g {0:.3f} avg_loss_d_a {1:.3f} avg_loss_d_b {2:.3f}'
                       .format(avg_loss_g.val, avg_loss_d_a.avg, avg_loss_d_b.avg))
                 if loss_g < min_loss_g and loss_a + loss_b < min_loss_d:
                     min_loss_g = loss_g
