@@ -9,13 +9,13 @@ from utils import AverageMeter, visualize, weights_init_normal, clip_weight
 
 root = 'data/selfie2anime'
 
-d_train_freq = 20
+d_train_freq = 10
 clip = 0.01
-print_freq = 10
+print_freq = 200
 weight = 10
 epochs = 1000
 lr = 0.0002
-batch_size = 32
+batch_size = 1
 input_channel = 3
 output_channel = 3
 ngf = 64
@@ -46,7 +46,7 @@ else:
 
 criterionGAN = PatchLoss().to(device)
 criterionL1 = nn.L1Loss().to(device)
-criterionMSE = nn.MSELoss().to(device)
+# criterionMSE = nn.MSELoss().to(device)
 
 optimzer_g = torch.optim.SGD(itertools.chain(netg_b2a.parameters(), netg_a2b.parameters()), lr=lr)
 optimzerd_a = torch.optim.SGD(netd_a.parameters(), lr)
@@ -94,8 +94,9 @@ def train():
             loss_cycle_b = criterionL1(recover_b, img_b) * 10
 
             loss_g = loss_d_a + loss_d_b + loss_cycle_a + loss_cycle_b
-            print('generator loss ', loss_d_a.data, loss_d_b.data, loss_cycle_a.data, loss_cycle_b.data)
-            print('generator loss ', loss_g.data)
+            if i % print_freq == 0:
+                print('generator loss ', loss_d_a.data, loss_d_b.data, loss_cycle_a.data, loss_cycle_b.data)
+                # print('generator loss ', loss_g.data)
 
             loss_g.backward()
             optimzer_g.step()

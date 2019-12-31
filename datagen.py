@@ -13,6 +13,7 @@ from os.path import join
 
 std = torch.Tensor([0.229, 0.224, 0.225])
 mean = torch.Tensor([0.485, 0.456, 0.406])
+img_size = 256
 
 
 class DatasetFromFolder(data.Dataset):
@@ -27,8 +28,8 @@ class DatasetFromFolder(data.Dataset):
     def __getitem__(self, index):
         a = Image.open(join(self.roota, self.image_a[index])).convert('RGB')
         b = Image.open(join(self.rootb, self.image_b[index])).convert('RGB')
-        a = a.resize((112, 112), Image.BICUBIC)
-        b = b.resize((112, 112), Image.BICUBIC)
+        a = a.resize((img_size, img_size), Image.BICUBIC)
+        b = b.resize((img_size, img_size), Image.BICUBIC)
         a = transforms.ToTensor()(a)
         b = transforms.ToTensor()(b)
         a = transforms.Normalize(mean, std)(a)
