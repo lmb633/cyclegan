@@ -9,7 +9,8 @@ from utils import AverageMeter, visualize, weights_init_normal, clip_weight
 
 root = 'data/selfie2anime'
 
-d_train_freq = 25
+if_train_d = False
+d_train_freq = 200
 clip = 0.01
 print_freq = 200
 weight = 10
@@ -102,7 +103,7 @@ def train():
             loss_g.backward()
             optimzer_g.step()
 
-            if i % d_train_freq == 0:
+            if (i + 1) % d_train_freq == 0:
                 #### update discriminator  a
                 optimzerd_a.zero_grad()
 
@@ -114,9 +115,10 @@ def train():
 
                 loss_a = (loss_d_a_fake + loss_d_a_real) * 0.5
                 # print('discriminator loss a ', loss_d_a_fake, loss_d_a_real)
-                loss_a.backward()
-                optimzerd_a.step()
-                clip_weight(optimzerd_a, clip)
+                if if_train_d:
+                    loss_a.backward()
+                    optimzerd_a.step()
+                    clip_weight(optimzerd_a, clip)
 
                 #### update discriminator  b
 
@@ -130,9 +132,10 @@ def train():
 
                 loss_b = (loss_d_b_fake + loss_d_b_real) * 0.5
                 # print('discriminator loss b ', loss_d_b_fake, loss_d_b_real)
-                loss_b.backward()
-                optimzerd_b.step()
-                clip_weight(optimzerd_b, clip)
+                if if_train_d:
+                    loss_b.backward()
+                    optimzerd_b.step()
+                    clip_weight(optimzerd_b, clip)
                 avg_loss_d_a.update(loss_a)
                 avg_loss_d_b.update(loss_b)
 
@@ -141,7 +144,7 @@ def train():
             avg_loss_g_b2a.update(loss_d_a)
             avg_loss_g.update(loss_g)
 
-            if i % print_freq == 0:
+            if (i + 1) % print_freq == 0:
                 print('epoch {0} {1}/{2}'.format(epoch, i, train_loader.__len__()))
                 print('loss: avg_loss_g {0:.3f} avg_loss_d_a {1:.3f} avg_loss_d_b {2:.3f} avg_loss_g_a {3:.3f} avg_loss_g_b {4:.3f}'
                       .format(avg_loss_g.val, avg_loss_d_a.avg, avg_loss_d_b.avg, avg_loss_g_a2b, avg_loss_g_b2a))
