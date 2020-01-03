@@ -60,7 +60,8 @@ def save_checkpoint(epoch, epochs_since_improvement, model, optimizer, hmean, is
         torch.save(state, 'BEST_checkpoint.tar')
 
 
-def visualize(modela2b, modelb2a, dataloader):
+def visualize(modela2b, modelb2a, dataloader, num=16):
+    i = 0
     for _, data in enumerate(dataloader):
         img_a, img_b = data[0].to(device), data[1].to(device)
         fake_b = modela2b(img_a)
@@ -75,7 +76,9 @@ def visualize(modela2b, modelb2a, dataloader):
             save_img(fake_img.cpu().detach(), 'images/b{0}_out.jpg'.format(i))
             save_img(recover_b.cpu().detach(), 'images/b{0}_recover.jpg'.format(i))
             save_img(img_b[i].cpu().detach(), 'images/b{0}_img.jpg'.format(i))
-        break
+        i += 1
+        if i > num:
+            break
 
 
 def weights_init_normal(optimizer):

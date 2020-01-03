@@ -17,7 +17,7 @@ weight = 10
 epochs = 1000
 lr = 0.0002
 batch_size = 1
-test_batch_size = 16
+test_batch_size = 1
 input_channel = 3
 output_channel = 3
 ngf = 64
@@ -30,7 +30,7 @@ train_set = DatasetFromFolder(root, 'train')
 train_loader = DataLoader(train_set, batch_size, True)
 
 test_set = DatasetFromFolder(root, 'test')
-test_loader = DataLoader(test_set, test_batch_size, True)
+test_loader = DataLoader(test_set, 1, True)
 
 if os.path.exists(check):
     print('load checkpoint')
