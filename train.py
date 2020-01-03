@@ -147,7 +147,7 @@ def train():
             if (i + 1) % print_freq == 0:
                 print('epoch {0} {1}/{2}'.format(epoch, i, train_loader.__len__()))
                 print('loss: avg_loss_g {0:.3f} avg_loss_d_a {1:.3f} avg_loss_d_b {2:.3f} avg_loss_g_a {3:.3f} avg_loss_g_b {4:.3f}'
-                      .format(avg_loss_g.val, avg_loss_d_a.avg, avg_loss_d_b.avg, avg_loss_g_a2b, avg_loss_g_b2a))
+                      .format(avg_loss_g.val, avg_loss_d_a.avg, avg_loss_d_b.avg, avg_loss_g_a2b.avg, avg_loss_g_b2a.avg))
                 if loss_g < min_loss_g and loss_a + loss_b < min_loss_d:
                     min_loss_g = loss_g
                     min_loss_d = loss_a + loss_b
