@@ -64,12 +64,16 @@ def visualize(modela2b, modelb2a, dataloader):
     for _, data in enumerate(dataloader):
         img_a, img_b = data[0].to(device), data[1].to(device)
         fake_b = modela2b(img_a)
+        recover_a = modelb2a(fake_b)
         fake_a = modelb2a(img_b)
+        recover_b = modela2b(fake_a)
         for i, fake_img in enumerate(fake_b):
             save_img(fake_img.cpu().detach(), 'images/a{0}_out.jpg'.format(i))
+            save_img(recover_a[i].cpu().detach(), 'images/a{0}_recover.jpg'.format(i))
             save_img(img_a[i].cpu().detach(), 'images/a{0}_img.jpg'.format(i))
         for i, fake_img in enumerate(fake_a):
             save_img(fake_img.cpu().detach(), 'images/b{0}_out.jpg'.format(i))
+            save_img(recover_b.cpu().detach(), 'images/b{0}_recover.jpg'.format(i))
             save_img(img_b[i].cpu().detach(), 'images/b{0}_img.jpg'.format(i))
         break
 
