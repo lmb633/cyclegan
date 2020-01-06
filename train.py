@@ -10,7 +10,7 @@ from utils import AverageMeter, visualize, weights_init_normal, clip_weight
 root = 'data/selfie2anime'
 
 if_train_d = False
-d_train_freq = 20
+d_train_freq = 2000
 clip = 0.01
 print_freq = 200
 weight = 10
@@ -118,7 +118,7 @@ def train():
                 if if_train_d:
                     loss_a.backward()
                     optimzerd_a.step()
-                    clip_weight(optimzerd_a, clip)
+                    # clip_weight(optimzerd_a, clip)
 
                 #### update discriminator  b
                 optimzerd_b.zero_grad()
@@ -134,7 +134,7 @@ def train():
                 if if_train_d:
                     loss_b.backward()
                     optimzerd_b.step()
-                    clip_weight(optimzerd_b, clip)
+                    # clip_weight(optimzerd_b, clip)
                 avg_loss_d_a.update(loss_a)
                 avg_loss_d_b.update(loss_b)
 
@@ -147,12 +147,12 @@ def train():
                 print('epoch {0} {1}/{2}'.format(epoch, i, train_loader.__len__()))
                 print('loss: avg_loss_g {0:.3f} avg_loss_d_a {1:.3f} avg_loss_d_b {2:.3f} avg_loss_g_d_a {3:.3f} avg_loss_g_d_b {4:.3f}'
                       .format(avg_loss_g.val, avg_loss_d_a.avg, avg_loss_d_b.avg, avg_loss_g_a2b.avg, avg_loss_g_b2a.avg))
-                if loss_g < min_loss_g and loss_a + loss_b < min_loss_d:
-                    min_loss_g = loss_g
-                    min_loss_d = loss_a + loss_b
-                    torch.save((netg_a2b, netg_b2a, netd_a, netd_b), check)
+        if avg_loss_g.avg < min_loss_g and avg_loss_d_a.avg + avg_loss_d_b.avg < min_loss_d:
+            min_loss_g = avg_loss_g.avg
+            min_loss_d = avg_loss_d_a.avg + avg_loss_d_b.avg
+            torch.save((netg_a2b, netg_b2a, netd_a, netd_b), check)
 
-                visualize(netg_a2b, netg_b2a, test_loader)
+        visualize(netg_a2b, netg_b2a, test_loader)
 
 
 if __name__ == '__main__':
