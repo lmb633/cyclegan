@@ -10,7 +10,7 @@ from utils import AverageMeter, visualize, weights_init_normal, clip_weight
 root = 'data/selfie2anime'
 
 if_train_d = False
-d_train_freq = 200
+d_train_freq = 20
 clip = 0.01
 print_freq = 200
 weight = 10
@@ -121,7 +121,6 @@ def train():
                     clip_weight(optimzerd_a, clip)
 
                 #### update discriminator  b
-
                 optimzerd_b.zero_grad()
 
                 pred_real_b = netd_b(img_b)
